@@ -1,0 +1,16 @@
+runtime: nodejs18  # Use the appropriate runtime for your Node.js version
+entrypoint: node server.js  # The main entry point for your Node.js server
+
+env_variables:
+  PYTHON_ENV: "production"  # Example of setting an environment variable
+
+resources:
+  memory_gb: 1  # Adjust based on your needs
+
+handlers:
+- url: /.*
+  script: auto
+
+# Indicate that Python dependencies are in requirements.txt
+runtime_config:
+  python_version: 3
