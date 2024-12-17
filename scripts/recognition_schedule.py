@@ -88,16 +88,20 @@ def get_recognition_schedule_values(id):
     type = contracts.acell(f'H{row}').value
     track_read_request()
     if type == "Annual" or type == "annual":
-        date = contracts.acell(f'E{row}').value
-        track_read_request()
         def_rev = contracts.acell(f'J{row}').value
         track_read_request()
         months = contracts.acell(f'F{row}').value
         track_read_request
         schedule = contracts.acell(f'L{row}').value
         track_read_request()
+        ren_date = contracts.acell(f'G{row}').value
+        track_read_request()
+        ren_date = datetime.strptime(ren_date, "%m/%d/%Y")
+        start_date = ren_date - relativedelta(months=int(months))
+        start_date = start_date + relativedelta(months = 1)
+        
 
-        return date, def_rev, months, schedule
+        return start_date, def_rev, months, schedule
     else:
         return "This is a monthly contract"
     
@@ -218,4 +222,6 @@ sheet_list = MasterSheet.worksheets()
 sheet_list_titles = get_sheet_list_titles(sheet_list)
 contracts = MasterSheet.worksheet("Contracts")
 #create_recognition_schedule(customer, service, title_list, id):
-run_recognition_schedules(contracts, sheet_list_titles)
+#run_recognition_schedules(contracts, sheet_list_titles)
+date, def_rev, months, schedule = get_recognition_schedule_values("fe1")
+print(date)

@@ -63,11 +63,13 @@ def delete_sheets(sheet_list_titles):
     return print("All done")
 
 def clear_sched():
-    len = len(contracts.col_values(1)[1:])
+    length = len(contracts.col_values(1)[1:])
     cells = []
-    for x in range(2, len+2):
+    for x in range(2, length+2):
         cells.append(Cell(x, 12, ''))
     contracts.update_cells(cells, value_input_option='USER_ENTERED') #batch update the cells
     return print("All done")
 
 
+clear_sched()
+delete_sheets(sheet_list_titles)
