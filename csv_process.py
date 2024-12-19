@@ -21,7 +21,6 @@ sheet_id = '1LgvCXbsUdX9JHGRdvZknG6QZiNjqCRREPo0dLtX98q4'
 logging.basicConfig(level=logging.INFO)
 MasterSheet = client.open_by_key(sheet_id)
 sheet_list = MasterSheet.worksheets()
-print(sheet_list)
 
 def sheet_exists(sheet_name):
     sheet_list = MasterSheet.worksheets()
@@ -48,7 +47,12 @@ def create_datasheet(month, csv):
     # print(invoices)
     # print(jentriess)
     df = df[columns_to_keep_invoice].dropna(subset=['Date'])
+    df['Amount'] = pd.to_numeric(df['Amount'].astype(str).str.replace(',', '', regex=True).str.strip(), errors='coerce').fillna(0)  # Convert to float
+    df['Balance'] = pd.to_numeric(df['Balance'].astype(str).str.replace(',', '', regex=True).str.strip(), errors='coerce').fillna(0)
     df.fillna('', inplace=True)
     qbdata.update([df.columns.values.tolist()] + df.values.tolist())
+    qbdata.format('E2:F99', {"numberFormat": {"type": "CURRENCY"}})
+
+
 
 create_datasheet("March", 'March_2024.csv')

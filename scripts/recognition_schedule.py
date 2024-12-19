@@ -98,7 +98,6 @@ def get_recognition_schedule_values(id):
         track_read_request()
         ren_date = datetime.strptime(ren_date, "%m/%d/%Y")
         start_date = ren_date - relativedelta(months=int(months))
-        start_date = start_date + relativedelta(months = 1)
         
 
         return start_date, def_rev, months, schedule
@@ -155,8 +154,8 @@ def create_recognition_schedule(customer, service, title_list, id):
     for x in range(2, (months+2)):
         cells.append(Cell(x,1, f"{customer} {service}"))
     cells.append(Cell(2,2, f"{date}"))
-    date_time = datetime.strptime(date, "%m/%d/%Y")
-    current_date = date_time
+    #date_time = datetime.strptime(date, "%m/%d/%Y")
+    current_date = date
     for x in range(3,(months+2)):
         current_date += relativedelta(months=1)
         current_date_str = current_date.strftime("%#m/%#d/%Y")
@@ -199,7 +198,7 @@ def run_recognition_schedules(worksheet, title_list):
     print(customers)
     index = 0
     for id in ids:
-        while read_request_counter >= 140:
+        while read_request_counter >= 135:
                 print("Read request limit reached. Waiting for 60 seconds...")
                 time.sleep(70)
                 read_request_counter = 0  # Reset counter after waiting
@@ -222,6 +221,6 @@ sheet_list = MasterSheet.worksheets()
 sheet_list_titles = get_sheet_list_titles(sheet_list)
 contracts = MasterSheet.worksheet("Contracts")
 #create_recognition_schedule(customer, service, title_list, id):
-#run_recognition_schedules(contracts, sheet_list_titles)
-date, def_rev, months, schedule = get_recognition_schedule_values("fe1")
-print(date)
+run_recognition_schedules(contracts, sheet_list_titles)
+#date, def_rev, months, schedule = get_recognition_schedule_values("fe15")
+#print(date)

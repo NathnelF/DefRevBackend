@@ -55,7 +55,7 @@ def internal_map(month, year, title_list):
         return print("No such title exists")
         
     customers = sheet.col_values(1)[1:]
-    revenues = sheet.col_values(3)[1:]
+    revenues = sheet.col_values(4)[1:]
 
     for x in range(0,len(customers)):
         interntaldict[customers[x]] = revenues[x]
@@ -111,7 +111,7 @@ def compare_maps(month, year, title_list):
     print(internalkeys)
     qbkeys = list(qb.keys())
     shared = []
-    print(internalkeys)
+    print(qbkeys)
     for key in internalkeys:
         match = find_best_match(key, qbkeys)
         if match:
