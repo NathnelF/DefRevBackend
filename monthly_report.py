@@ -9,7 +9,7 @@ from gspread import Cell
 import time
 import logging
 import pandas as pd
-
+import argparse
 
 
 
@@ -60,7 +60,7 @@ def month_to_number(month):
     elif month == "March" or month == "march":
         numeric = 3
     elif month == "April" or month == "april":
-        month = 4
+        numeric = 4
     elif month == "May" or month == "may":
         numeric = 5
     elif month == "June" or month == "june":
@@ -78,7 +78,7 @@ def month_to_number(month):
     elif month == "December" or month == "december":
         numeric = 12
     else:
-        return print("This month is not real")
+        return print("Error: Enter a valid month.")
     return numeric
 
 def split_date(date):
@@ -126,4 +126,11 @@ def monthly_report(month, year):
     
     return print("All done")
 
-monthly_report("March", "2024")
+
+parser = argparse.ArgumentParser(description='command-line arguments.')
+parser.add_argument("Month", type=str, help="Generate report for this month")
+parser.add_argument("Year", type=str, help="Process report for month in this year")
+args = parser.parse_args()
+
+
+monthly_report(args.Month, args.Year)

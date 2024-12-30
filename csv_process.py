@@ -9,6 +9,7 @@ from gspread import Cell
 import time
 import logging
 import pandas as pd
+import argparse
 
 #Connect python script to google sheets API
 CLIENT_FILE = 'desktopoauthkey.json'
@@ -55,4 +56,20 @@ def create_datasheet(month, csv):
 
 
 
-create_datasheet("March", 'March_2024.csv')
+
+parser = argparse.ArgumentParser(description="Command line arguments")
+parser.add_argument("Month", type=str, help="Month to create qb report for")
+parser.add_argument("Year", type=str, help="Year to process qb data in")
+args = parser.parse_args()
+
+try:
+    data = f"C:\\Users\\natef\\OneDrive\\Desktop\\Projects\\NWGDefRev\\backend\\reports\\{args.Month}_{args.Year}.csv"
+    if os.path.exists(data):
+        create_datasheet(args.Month, data)
+    else:
+        raise FileNotFoundError()
+except FileNotFoundError as e:
+    print(f"Error: {e}")
+    print("You likely entered an invalid month or year. Check if the corresponding report exists.")
+except Exception as e:
+    print("An unexpected error ocurred: {e}")

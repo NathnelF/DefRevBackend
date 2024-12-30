@@ -11,6 +11,7 @@ import logging
 import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+import argparse
 
 
 
@@ -96,13 +97,13 @@ def compare_maps(month, year, title_list):
     if title_exists(qb_sheet_title, title_list):       
         qb_sheet = MasterSheet.worksheet(qb_sheet_title)
     else:
-        print("No such title exists")
+        return print("Error: Invalid dates")
     
     internal_sheet_title = f"{month} report for {year}"
     if title_exists(internal_sheet_title, title_list):       
         internal_sheet = MasterSheet.worksheet(internal_sheet_title)
     else:
-        print("No such title exists")
+        return print("Error: Invalid dates")
     
     internal = internal_map(month, "2024", title_list)
     qb = qb_map(month, title_list)
@@ -158,13 +159,13 @@ def compare_balances(month, year, title_list):
     if title_exists(qb_sheet_title, title_list):       
         qb_sheet = MasterSheet.worksheet(qb_sheet_title)
     else:
-        print("No such title exists")
+        return print("Error: Invalid dates")
     
     internal_sheet_title = f"{month} report for {year}"
     if title_exists(internal_sheet_title, title_list):       
         internal_sheet = MasterSheet.worksheet(internal_sheet_title)
     else:
-        print("No such title exists")
+        return print("Error: Invalid dates")
 
     qb_balance = find_balance(qb_sheet)
     print(qb_balance)
@@ -198,5 +199,10 @@ MasterSheet = client.open_by_key(sheet_id)
 sheet_list = MasterSheet.worksheets()
 sheet_list_titles = get_sheet_list_titles(sheet_list)
 
-compare_maps("March", "2024", sheet_list_titles)
-compare_balances("March", "2024", sheet_list_titles)
+parser = argparse.ArgumentParser(description="Command line argument parser")
+parser.add_argument("Month", type=str, help="Month to compare data for")
+parser.add_argument("Year", type=str, help="Fiscal Year")
+args = parser.parse_args()
+
+compare_maps(args.Month, args.Year, sheet_list_titles)
+compare_balances(args.Month, args.Year, sheet_list_titles)

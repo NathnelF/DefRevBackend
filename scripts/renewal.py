@@ -54,6 +54,7 @@ contracts = MasterSheet.worksheet("Contracts")
 lifecycle = MasterSheet.worksheet("Contract Lifecycle Events")
 
 def get_lifecycle_fields(sheet, row):
+    sheet.format('I2:I1000', {"numberFormat": {"type": "NUMBER"}})
     event = sheet.col_values(1)
     event = event[row]
     timing = sheet.col_values(2)
@@ -96,6 +97,7 @@ def update_recognition_schedule(schedule, effective_date, invoice_amount, servic
     # def rev increase
     cells.append(Cell(line_start,3, invoice_amount))
     # def rev decrease
+    print(invoice_amount)
     def_rev_decrease = int(invoice_amount) / int(service_term) * - 1
     for x in range(line_start, line_start * 2 - 2):
         cells.append(Cell(x, 4, def_rev_decrease ))
@@ -115,14 +117,14 @@ def update_recognition_schedule(schedule, effective_date, invoice_amount, servic
     schedule.update_cells(cells, value_input_option='USER_ENTERED') #batch update the cells
     schedule.format('C2:F100', {"numberFormat": {"type": "CURRENCY"}})
     schedule.format('B2:B100', {"numberFormat": {"type": "DATE"}})
-    return print("finsihed")
+    return print("finished")
 
 if __name__ == "__main__":
-    event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,7)
+    event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,12)
     # Find associated recognition schedule
     customer_tuple = f"{customer} {service}"
     title = f"{customer} {service} recognition schedule"
     print(title)
     schedule = MasterSheet.worksheet(title)
     update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
-    complete(7)
+    complete(12)
