@@ -111,6 +111,7 @@ def month_lookup(target_month, target_year, sheet):
     
 
 def price_expansion(sheet, row):
+    sheet.format('I2:I999', {"numberFormat": {"type": "NUMBER"}})
     event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(sheet, row)
     print(f"{customer} {service} recogintion schedule")
     schedule = MasterSheet.worksheet(f"{customer} {service} recognition schedule") #Finds recognition schedule based on Customer, Service touple
@@ -173,13 +174,7 @@ def price_expansion(sheet, row):
        update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
     return
 
-#event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields = get_lifecycle_fields(lifecycle, 4)
-# print(customer, service)
-price_expansion(lifecycle, 2)
-complete(2)
-# test_schedule = MasterSheet.worksheet(f"{customer} {service} recognition schedule")
-# m,d,y = get_date_values(effective_date)
-# target_m, target_y = find_month(m,d,y)
-# print(target_m, target_y)
-# index = month_lookup(target_m, target_y, test_schedule)
-# print(index)
+#event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields = get_lifecycle_fields(lifecycle, 8)
+#print(customer, service)
+price_expansion(lifecycle, 8)
+#complete(8)

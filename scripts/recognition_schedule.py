@@ -85,22 +85,24 @@ def get_recognition_schedule_values(id):
     contracts = MasterSheet.worksheet("Contracts")
     track_read_request()
     row = row_lookup(contracts, id)
-    type = contracts.acell(f'H{row}').value
+    type = contracts.acell(f'I{row}').value
     track_read_request()
     if type == "Annual" or type == "annual":
-        def_rev = contracts.acell(f'J{row}').value
+        def_rev = contracts.acell(f'K{row}').value
         track_read_request()
         months = contracts.acell(f'F{row}').value
-        track_read_request
-        schedule = contracts.acell(f'L{row}').value
         track_read_request()
-        ren_date = contracts.acell(f'G{row}').value
+        schedule = contracts.acell(f'N{row}').value
         track_read_request()
-        ren_date = datetime.strptime(ren_date, "%m/%d/%Y")
-        start_date = ren_date - relativedelta(months=int(months))
+        end_date = contracts.acell(f'H{row}').value
+        track_read_request()
+        start_date = contracts.acell(f'G{row}').value
+        track_read_request()
+        churn_date = contracts.acell(f'J{row}').value
+        track_read_request()
         
-
-        return start_date, def_rev, months, schedule
+        #print("Returning:", start_date, def_rev, months, schedule)
+        return start_date, end_date, churn_date, def_rev, months, schedule
     else:
         return "This is a monthly contract"
     
@@ -108,7 +110,7 @@ def check_schedule_status(id):
     contracts = MasterSheet.worksheet("Contracts")
     track_read_request()
     row = row_lookup(contracts, id)
-    schedule = contracts.acell(f'L{row}').value
+    schedule = contracts.acell(f'M{row}').value
     track_read_request()
     if schedule: 
         return True
@@ -119,8 +121,27 @@ def update_schedule_status(id, url):
     contracts = MasterSheet.worksheet("Contracts")
     track_read_request()
     contracts_row = row_lookup(contracts, id)
-    contracts.update_acell(f"L{contracts_row}", url)
+    contracts.update_acell(f"N{contracts_row}", url)
     return print("Schedule status updated")
+
+def split_date(date):
+    date = date.split("/")
+    month = int(date[0])
+    year = date[2]
+    return month, year
+
+def churn_contract(schedule, churn_date):
+    dates = schedule.col_values(2)
+    numeric, year = split_date(churn_date)
+    for index, date in enumerate(dates):
+        m,y = split_date(date)
+        if (m == numeric and y == year):
+            row = index + 2
+            #update row to be churned.
+            #clear values under it.
+    return
+
+
 
 def create_recognition_schedule(customer, service, title_list, id):
     schedule_title = f"{customer} {service} recognition schedule"
@@ -139,7 +160,7 @@ def create_recognition_schedule(customer, service, title_list, id):
         Cell(1, 2, "Date")
     ]
     #get important values from contract sheet
-    date, def_rev, months, schedule = get_recognition_schedule_values(id)
+    start_date, end_date, churn_date, def_rev, months, schedule = get_recognition_schedule_values(id)
     #This is how much def rev increases by initially
     def_rev_increase = convert_currency_string_to_int(def_rev)
     print(months)
@@ -150,16 +171,18 @@ def create_recognition_schedule(customer, service, title_list, id):
     def_rev_decrease = income * -1
     schedule = MasterSheet.add_worksheet(title=f"{customer} {service} recognition schedule", rows=100, cols=20)
     url = f"{master_url}/edit?gid={schedule.id}#gid={schedule.id}"
-    update_schedule_status(id, url)
+    
     for x in range(2, (months+2)):
         cells.append(Cell(x,1, f"{customer} {service}"))
-    cells.append(Cell(2,2, f"{date}"))
+    cells.append(Cell(2,2, f"{start_date}"))
     #date_time = datetime.strptime(date, "%m/%d/%Y")
-    current_date = date
+    current_date = datetime.strptime(start_date, "%m/%d/%Y")
     for x in range(3,(months+2)):
         current_date += relativedelta(months=1)
         current_date_str = current_date.strftime("%#m/%#d/%Y")
         cells.append(Cell(x,2, current_date_str))
+    final_date = current_date
+    next_start_date = final_date + relativedelta(months=1)
     #Def rev increase tracking
     cells.append(Cell(1,3, "Def Rev Increase"))
     cells.append(Cell(2,3, f"{def_rev_increase}"))
@@ -178,11 +201,17 @@ def create_recognition_schedule(customer, service, title_list, id):
     for x in range(3,(months+2)):
         balance -= income #each month balance changes negatively by income
         cells.append(Cell(x,6, f"{balance}"))
-    #schedule.update_cell(1,6, "Monthly Change")
+    
 
+    update_schedule_status(id, url)
     schedule.update_cells(cells, value_input_option='USER_ENTERED') #batch update the cells
     schedule.format('C2:F50', {"numberFormat": {"type": "CURRENCY"}})
     schedule.format('B2:B50', {"numberFormat": {"type": "DATE"}})
+    if (next_start_date == end_date):
+        {
+            #renew
+        }
+    # check for churn
     return
 
 
@@ -222,5 +251,6 @@ sheet_list_titles = get_sheet_list_titles(sheet_list)
 contracts = MasterSheet.worksheet("Contracts")
 #create_recognition_schedule(customer, service, title_list, id):
 run_recognition_schedules(contracts, sheet_list_titles)
-#date, def_rev, months, schedule = get_recognition_schedule_values("fe15")
+
 #print(date)
+

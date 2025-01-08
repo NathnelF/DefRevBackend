@@ -75,7 +75,9 @@ def get_lifecycle_fields(sheet, row):
     invoice_amount = invoice_amount[row]
     service_term = sheet.col_values(12)
     service_term = service_term[row]
-    return event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term
+    price_increase = sheet.col_values(13)
+    price_increase = price_increase[row]
+    return event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term, price_increase
 
 
 #Get customer service touple from lifecycle sheet
@@ -120,11 +122,11 @@ def update_recognition_schedule(schedule, effective_date, invoice_amount, servic
     return print("finished")
 
 if __name__ == "__main__":
-    event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,12)
+    event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,10)
     # Find associated recognition schedule
     customer_tuple = f"{customer} {service}"
     title = f"{customer} {service} recognition schedule"
     print(title)
     schedule = MasterSheet.worksheet(title)
     update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
-    complete(12)
+    complete(10)

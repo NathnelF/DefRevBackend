@@ -66,10 +66,10 @@ def clear_sched():
     length = len(contracts.col_values(1)[1:])
     cells = []
     for x in range(2, length+2):
-        cells.append(Cell(x, 12, ''))
+        cells.append(Cell(x, 14, ''))
     contracts.update_cells(cells, value_input_option='USER_ENTERED') #batch update the cells
     return print("All done")
 
 
 clear_sched()
-#delete_sheets(sheet_list_titles)
+delete_sheets(sheet_list_titles)
