@@ -171,7 +171,7 @@ def price_expansion(sheet, row):
         return
     else:
        customer_tuple = f"{customer} {service}"
-       update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
+       update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, customer_tuple)
     return
 
 #event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields = get_lifecycle_fields(lifecycle, 8)

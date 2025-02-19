@@ -103,7 +103,7 @@ def compare_maps(month, year, title_list):
     if title_exists(internal_sheet_title, title_list):       
         internal_sheet = MasterSheet.worksheet(internal_sheet_title)
     else:
-        return print("Error: Invalid dates")
+        return print("Error: Invalid dates q")
     
     internal = internal_map(month, "2024", title_list)
     qb = qb_map(month, title_list)

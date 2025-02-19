@@ -9,6 +9,8 @@ from gspread import Cell
 import time
 import logging
 import pandas as pd
+from renewal import update_recognition_schedule
+from renewal import get_lifecycle_fields
 
 
 
@@ -100,9 +102,11 @@ def get_recognition_schedule_values(id):
         track_read_request()
         churn_date = contracts.acell(f'J{row}').value
         track_read_request()
+        price_increase = contracts.acell(f'M{row}').value
+        track_read_request()
         
         #print("Returning:", start_date, def_rev, months, schedule)
-        return start_date, end_date, churn_date, def_rev, months, schedule
+        return start_date, end_date, churn_date, def_rev, months, schedule, price_increase
     else:
         return "This is a monthly contract"
     
@@ -110,7 +114,7 @@ def check_schedule_status(id):
     contracts = MasterSheet.worksheet("Contracts")
     track_read_request()
     row = row_lookup(contracts, id)
-    schedule = contracts.acell(f'M{row}').value
+    schedule = contracts.acell(f'N{row}').value
     track_read_request()
     if schedule: 
         return True
@@ -141,7 +145,14 @@ def churn_contract(schedule, churn_date):
             #clear values under it.
     return
 
-
+def increment_date(date, timeframe, value):
+    valid_timeframes = {"years", "months", "weeks", "days", "hours", "minutes", "seconds"}
+    if timeframe not in valid_timeframes:
+        raise ValueError(f"Invalid timeframe: '{timeframe}'. Must be one of {valid_timeframes}.")
+    date = datetime.strptime(date, "%m/%d/%Y")
+    date += relativedelta(**{timeframe: value})
+    date = date.strftime("%#m/%#d/%Y")
+    return date
 
 def create_recognition_schedule(customer, service, title_list, id):
     schedule_title = f"{customer} {service} recognition schedule"
@@ -160,16 +171,19 @@ def create_recognition_schedule(customer, service, title_list, id):
         Cell(1, 2, "Date")
     ]
     #get important values from contract sheet
-    start_date, end_date, churn_date, def_rev, months, schedule = get_recognition_schedule_values(id)
+    start_date, end_date, churn_date, def_rev, months, schedule, price_increase = get_recognition_schedule_values(id)
     #This is how much def rev increases by initially
     def_rev_increase = convert_currency_string_to_int(def_rev)
     print(months)
     months = int(months)
+    if (months == 36):
+        def_rev_increase = def_rev_increase * 3
     #This will be the monthly income based on revenue recognition
     income = def_rev_increase / months
+    print(f"income will be {income}")
     #This is the monthly deferred revenue decrease
     def_rev_decrease = income * -1
-    schedule = MasterSheet.add_worksheet(title=f"{customer} {service} recognition schedule", rows=100, cols=20)
+    schedule = MasterSheet.add_worksheet(title=f"{customer} {service} recognition schedule", rows=500, cols=20)
     url = f"{master_url}/edit?gid={schedule.id}#gid={schedule.id}"
     
     for x in range(2, (months+2)):
@@ -182,7 +196,13 @@ def create_recognition_schedule(customer, service, title_list, id):
         current_date_str = current_date.strftime("%#m/%#d/%Y")
         cells.append(Cell(x,2, current_date_str))
     final_date = current_date
-    next_start_date = final_date + relativedelta(months=1)
+    print(f'final date is {final_date}')
+    next_start_date_dt = final_date + relativedelta(months=1)
+    next_end_date_dt = next_start_date_dt + relativedelta(years=1)
+    next_start_date = next_start_date_dt.strftime("%#m/%#d/%Y")
+    next_end_date = next_end_date_dt.strftime("%#m/%#d/%Y")
+    print(f"Start of next term is {next_start_date}")
+    print(f"End of next term is {next_end_date}")
     #Def rev increase tracking
     cells.append(Cell(1,3, "Def Rev Increase"))
     cells.append(Cell(2,3, f"{def_rev_increase}"))
@@ -207,11 +227,43 @@ def create_recognition_schedule(customer, service, title_list, id):
     schedule.update_cells(cells, value_input_option='USER_ENTERED') #batch update the cells
     schedule.format('C2:F50', {"numberFormat": {"type": "CURRENCY"}})
     schedule.format('B2:B50', {"numberFormat": {"type": "DATE"}})
-    if (next_start_date == end_date):
-        {
-            #renew
-        }
-    # check for churn
+    new_amount = float(def_rev_increase)
+    start_m, start_y = split_date(next_start_date)
+    end_m, end_y = split_date(end_date)
+    print(f"start month: {start_m}, end month {end_m}, start year: {start_y}, end year: {end_y}")
+    end_date_dt = datetime.strptime(end_date, "%m/%d/%Y")
+    print(end_date_dt)
+    while True:
+        if start_m == end_m and start_y == end_y:
+            break
+        print(f"Next start date: {next_start_date_dt}, end date: {end_date_dt}. Difference = {(abs(next_start_date_dt - end_date_dt))}")
+        if abs(next_start_date_dt - end_date_dt).days == 1:
+            break
+        if price_increase:
+            percent = (int(price_increase)/100) + 1
+            print(f"Percent is :{percent}")
+            new_amount = int(new_amount * percent)
+            print(f"New amount is: {new_amount}")
+        else:
+            new_amount = def_rev_increase
+        customer_tuple = f"{customer} {service}"
+        print(f"Lifecycle values: {new_amount}, {months}, {customer}, {service}")
+        update_recognition_schedule(schedule, next_start_date, new_amount, months, customer_tuple)
+        #update contracts dates // COMMENTED OUT FOR NOW
+        # contract_row = row_lookup(contracts, id)
+        # contracts.update_acell(f"G{contract_row}", f"{next_start_date}")
+        next_start_date_dt = datetime.strptime(next_start_date, "%m/%d/%Y")
+        next_start_date_dt += relativedelta(years=1)
+        print(f"Next start date: {next_start_date}")
+        next_start_date = next_start_date_dt.strftime("%#m/%#d/%Y")
+        next_end_date = datetime.strptime(next_end_date, "%m/%d/%Y")
+        next_end_date += relativedelta(years=1)
+        print(f"Next end date: {next_end_date}")
+        next_end_date = next_end_date.strftime("%#m/%#d/%Y")
+        print(f"Original end date: {end_date}")
+        start_m, start_y = split_date(next_start_date)
+        print(f"New start month: {start_m}, new start year: {start_y}")
+            # check for churn
     return
 
 
@@ -227,7 +279,7 @@ def run_recognition_schedules(worksheet, title_list):
     print(customers)
     index = 0
     for id in ids:
-        while read_request_counter >= 135:
+        while read_request_counter >= 125:
                 print("Read request limit reached. Waiting for 60 seconds...")
                 time.sleep(70)
                 read_request_counter = 0  # Reset counter after waiting
@@ -246,11 +298,21 @@ def run_recognition_schedules(worksheet, title_list):
     return print("All done")
 
 
-sheet_list = MasterSheet.worksheets()
-sheet_list_titles = get_sheet_list_titles(sheet_list)
-contracts = MasterSheet.worksheet("Contracts")
-#create_recognition_schedule(customer, service, title_list, id):
-run_recognition_schedules(contracts, sheet_list_titles)
+if __name__ == "__main__":
+    sheet_list = MasterSheet.worksheets()
+    sheet_list_titles = get_sheet_list_titles(sheet_list)
+    contracts = MasterSheet.worksheet("Contracts")
+    #create_recognition_schedule("Akumin", "NWG Manage", sheet_list_titles, "fe1")
+    #create_recognition_schedule("Production Saw & Machine", "MSS-FW", sheet_list_titles, "fe45")
+    run_recognition_schedules(contracts, sheet_list_titles)
+    #print(date)
 
-#print(date)
+    # start_date = "6/1/2025"
+    # end_date = "5/31/2025"
+
+    # start_dt = datetime.strptime(start_date, "%m/%d/%Y")
+    # end_dt = datetime.strptime(end_date, "%m/%d/%Y")
+
+    # dif = abs(start_dt - end_dt)
+    # print(dif.days)
 

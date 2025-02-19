@@ -10,6 +10,7 @@ import time
 import logging
 import pandas as pd
 from lifecycle_complete import complete
+import sys
 
 
 
@@ -53,64 +54,74 @@ sheet_list_titles = get_sheet_list_titles(sheet_list)
 contracts = MasterSheet.worksheet("Contracts")
 lifecycle = MasterSheet.worksheet("Contract Lifecycle Events")
 
-def get_lifecycle_fields(sheet, row):
-    sheet.format('I2:I1000', {"numberFormat": {"type": "NUMBER"}})
-    event = sheet.col_values(1)
-    event = event[row]
-    timing = sheet.col_values(2)
-    timing = timing[row]
-    customer = sheet.col_values(3)
-    customer = customer[row]
-    service = sheet.col_values(4)
-    service = service[row]
-    id = sheet.col_values(5)
-    id = id[row]
-    effective_date = sheet.col_values(6)
-    effective_date = effective_date[row]
-    invoice_schedule = sheet.col_values(7)
-    invoice_schedule = invoice_schedule[row]
-    invoice_date = sheet.col_values(8)
-    invoice_date = invoice_date[row]
-    invoice_amount = sheet.col_values(9)
-    invoice_amount = invoice_amount[row]
-    service_term = sheet.col_values(12)
-    service_term = service_term[row]
-    price_increase = sheet.col_values(13)
-    price_increase = price_increase[row]
-    return event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term, price_increase
 
+
+def get_lifecycle_fields(sheet, row):
+    row-=1
+    sheet.format('I2:I1000', {"numberFormat": {"type": "NUMBER"}})
+    sheet.format('F2:F1000', {"numberFormat": {"type": "DATE"}})
+    sheet.format('H2:H1000', {"numberFormat": {"type": "DATE"}})
+    sheet.format('J2:J1000', {"numberFormat": {"type": "DATE"}})
+    length = sheet.col_values(1)
+    if (0 < row < len(length)):
+        event = length[row]
+        timing = sheet.col_values(2)
+        timing = timing[row]
+        customer = sheet.col_values(3)
+        customer = customer[row]
+        service = sheet.col_values(4)
+        service = service[row]
+        id = sheet.col_values(5)
+        id = id[row]
+        effective_date = sheet.col_values(6)
+        effective_date = effective_date[row]
+        invoice_schedule = sheet.col_values(7)
+        invoice_schedule = invoice_schedule[row]
+        invoice_date = sheet.col_values(8)
+        invoice_date = invoice_date[row]
+        invoice_amount = sheet.col_values(9)
+        invoice_amount = invoice_amount[row]
+        service_term = sheet.col_values(12)
+        service_term = service_term[row]
+        return event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term
+    else:
+        raise IndexError(f"Row {row+1} is out of range.")
 
 #Get customer service touple from lifecycle sheet
 # Find line to start
 # Build out next recognition schedule.
-def update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple):
-    line_start = int(service_term) + 2
+def update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, customer_tuple):
+    col_check = schedule.col_values(1) #grab list of column values. 
+    line_start = len(col_check) + 1 #logically the last column value is one less than our desired row.
+    print(f"Line start: {line_start}")
     cells = []
     #add new dates
     date_time = datetime.strptime(effective_date, "%m/%d/%Y")
     current_date = date_time
-    for x in range(line_start,(line_start*2 - 2)):
+    for x in range(line_start,(line_start+int(service_term))):
+        print(f"Current line{x}")
         current_date_str = current_date.strftime("%#m/%#d/%Y")
         cells.append(Cell(x,2, current_date_str))
         current_date += relativedelta(months=1)
     #add customers
-    for x in range(line_start, line_start*2 -2):
+    for x in range(line_start, line_start+int(service_term)):
         cells.append(Cell(x,1, customer_tuple))
     # def rev increase
     cells.append(Cell(line_start,3, invoice_amount))
     # def rev decrease
     print(invoice_amount)
-    def_rev_decrease = int(invoice_amount) / int(service_term) * - 1
-    for x in range(line_start, line_start * 2 - 2):
+    def_rev_decrease = float(invoice_amount) / float(service_term) * float(-1)
+    print(f"Float amount = {def_rev_decrease}")
+    for x in range(line_start, line_start+int(service_term)):
         cells.append(Cell(x, 4, def_rev_decrease ))
     # income
-    income = def_rev_decrease * -1
-    for x in range(line_start, line_start * 2 - 2):
+    income = def_rev_decrease * float(-1)
+    for x in range(line_start, line_start+int(service_term)):
         cells.append(Cell(x, 5, income))
     # balance 
-    balance = int(invoice_amount) - income
+    balance = float(invoice_amount) - income
     cells.append(Cell(line_start, 6, balance))
-    for x in range(line_start+1, line_start * 2 - 2):
+    for x in range(line_start+1, line_start+int(service_term)):
         balance -= income
         cells.append(Cell(x,6,balance))
 
@@ -122,11 +133,15 @@ def update_recognition_schedule(schedule, effective_date, invoice_amount, servic
     return print("finished")
 
 if __name__ == "__main__":
-    event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,10)
+    try:
+        event, timing, customer, service, id, effective_date, invoice_schedule, invoice_date, invoice_amount, service_term = get_lifecycle_fields(lifecycle,1)
+    except IndexError as e:
+        print(e)
+        sys.exit(1)
     # Find associated recognition schedule
     customer_tuple = f"{customer} {service}"
     title = f"{customer} {service} recognition schedule"
     print(title)
-    schedule = MasterSheet.worksheet(title)
-    update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
-    complete(10)
+    #schedule = MasterSheet.worksheet(title)
+    # update_recognition_schedule(schedule, effective_date, invoice_amount, service_term, id, customer_tuple)
+    # complete(10)
