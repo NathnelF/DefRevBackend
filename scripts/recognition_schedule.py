@@ -1,4 +1,3 @@
-import os
 import gspread
 from google.oauth2.service_account import Credentials
 from gspread.exceptions import GSpreadException
@@ -8,7 +7,6 @@ from dateutil.relativedelta import relativedelta
 from gspread import Cell
 import time
 import logging
-import pandas as pd
 from renewal import update_recognition_schedule
 from renewal import get_lifecycle_fields
 

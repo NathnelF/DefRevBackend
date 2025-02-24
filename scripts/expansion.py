@@ -6,9 +6,7 @@ from gspread.exceptions import APIError
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from gspread import Cell
-import time
 import logging
-import pandas as pd
 from renewal import update_recognition_schedule
 from lifecycle_complete import complete
 
